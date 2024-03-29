@@ -2,11 +2,16 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"net"
 	"net/http"
+	"os"
 	"time"
+	"golang.org/x/crypto/bcrypt"
 )
+
+// go run your_program.go -token your_token
 
 type Request struct {
 	Token string `json:"token"`
@@ -21,7 +26,19 @@ type Response struct {
 	Success   bool   `json:"success"`
 }
 
+var SpidersToken string
+
 func main() {
+	// Parse command-line arguments
+	flag.StringVar(&SpidersToken, "token", "", "Token for authentication")
+	flag.Parse()
+
+	if SpidersToken == "" {
+		fmt.Println("Error: Token not provided.")
+		fmt.Println("Usage: go run your_program.go -token your_token")
+		os.Exit(1)
+	}
+
 	// 连接服务端
 	conn, err := net.Dial("tcp", "localhost:7788")
 	if err != nil {
@@ -53,6 +70,12 @@ func main() {
 }
 
 func handleTask(conn net.Conn, request Request) {
+	// 校验 Token
+	if !BcryptCheck(request.Token, SpidersToken) {
+		fmt.Println("Invalid token received. Ignoring the task.")
+		return
+	}
+
 	// 记录开始时间
 	startTime := time.Now()
 
@@ -111,4 +134,10 @@ func fetchWebData(url string) (string, bool) {
 	}
 
 	return string(body[:n]), true
+}
+
+// BcryptCheck 对比明文密码和哈希值
+func BcryptCheck(password, hash string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+	return err == nil
 }
