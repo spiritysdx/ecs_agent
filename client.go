@@ -29,7 +29,7 @@ type Response struct {
 var SpidersToken string
 
 func main() {
-	// Parse command-line arguments
+	// 指定校验的token明文
 	flag.StringVar(&SpidersToken, "token", "", "Token for authentication")
 	flag.Parse()
 
