@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"html"
 	"io"
 	"net"
 	"net/http"
@@ -24,7 +23,7 @@ type Response struct {
 	Runtime   int    `json:"runtime"`
 	StartTime string `json:"start_time"`
 	Success   bool   `json:"success"`
-	WebData   string `json:"webdata,omitempty"`
+	WebData   []byte `json:"webdata,omitempty"`
 }
 
 var SpidersToken string
@@ -119,28 +118,26 @@ func handleTask(conn net.Conn, request Request) {
 	}
 }
 
-func fetchWebData(url string) (string, bool) {
+func fetchWebData(url string) ([]byte, bool) {
 	client := &http.Client{
 		Timeout: 10 * time.Second, // 设置超时时间
 	}
 	resp, err := client.Get(url)
 	if err != nil {
 		fmt.Println("Error fetching web data:", err.Error())
-		return "", false
+		return nil, false
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		fmt.Printf("Error fetching web data. Status code: %d\n", resp.StatusCode)
-		return "", false
+		return nil, false
 	}
 	// 读取页面内容
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Println("Error reading response body:", err.Error())
-		return "", false
+		return nil, false
 	}
-	// 对内容进行转义
-	escapedBody := html.EscapeString(string(body))
-	return escapedBody, true
+	return body, true
 }
