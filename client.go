@@ -4,14 +4,14 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"os"
 	"time"
-	"golang.org/x/crypto/bcrypt"
 )
 
-// go run your_program.go -token your_token
+// go run client.go -token
 
 type Request struct {
 	Token string `json:"token"`
@@ -20,10 +20,10 @@ type Request struct {
 
 type Response struct {
 	Token     string `json:"token"`
-	WebData   string `json:"webdata,omitempty"`
 	Runtime   int    `json:"runtime"`
 	StartTime string `json:"start_time"`
 	Success   bool   `json:"success"`
+	WebData   string `json:"webdata,omitempty"`
 }
 
 var SpidersToken string
@@ -39,21 +39,30 @@ func main() {
 		os.Exit(1)
 	}
 
-	// 连接服务端
-	conn, err := net.Dial("tcp", "localhost:7788")
-	if err != nil {
-		fmt.Println("Error connecting:", err.Error())
-		return
+	for {
+		// 连接服务端
+		conn, err := net.Dial("tcp", "localhost:7788")
+		if err != nil {
+			fmt.Println("Error connecting:", err.Error())
+			time.Sleep(6 * time.Second) // 等待 6 秒后尝试重新连接
+			continue
+		}
+
+		// 连接成功后开始处理任务
+		handleConnection(conn)
 	}
+}
+
+func handleConnection(conn net.Conn) {
 	defer conn.Close()
 
 	for {
 		// 接收服务端发送的任务
-		buffer := make([]byte, 1024)
+		buffer := make([]byte, 409600)
 		n, err := conn.Read(buffer)
 		if err != nil {
 			fmt.Println("Error reading:", err.Error())
-			continue // 继续等待下一个任务
+			return // 如果出错就退出，等待外层循环重新连接
 		}
 
 		// 解析任务
@@ -71,7 +80,7 @@ func main() {
 
 func handleTask(conn net.Conn, request Request) {
 	// 校验 Token
-	if !BcryptCheck(request.Token, SpidersToken) {
+	if request.Token != SpidersToken {
 		fmt.Println("Invalid token received. Ignoring the task.")
 		return
 	}
@@ -88,10 +97,10 @@ func handleTask(conn net.Conn, request Request) {
 	// 构建响应
 	response := Response{
 		Token:     request.Token,
-		WebData:   webData,
 		Runtime:   runtime,
-		StartTime: startTime.Format(time.RFC3339), // 北京时间
 		Success:   success,
+		StartTime: startTime.Format(time.RFC3339), // 北京时间
+		WebData:   webData,
 	}
 
 	// 将响应编码为JSON格式
@@ -108,7 +117,6 @@ func handleTask(conn net.Conn, request Request) {
 		return
 	}
 }
-
 func fetchWebData(url string) (string, bool) {
 	client := &http.Client{
 		Timeout: 10 * time.Second, // 设置超时时间
@@ -124,20 +132,11 @@ func fetchWebData(url string) (string, bool) {
 		fmt.Printf("Error fetching web data. Status code: %d\n", resp.StatusCode)
 		return "", false
 	}
-
 	// 读取页面内容
-	body := make([]byte, 1024)
-	n, err := resp.Body.Read(body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Println("Error reading response body:", err.Error())
 		return "", false
 	}
-
-	return string(body[:n]), true
-}
-
-// BcryptCheck 对比明文密码和哈希值
-func BcryptCheck(password, hash string) bool {
-	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
-	return err == nil
+	return string(body), true
 }
