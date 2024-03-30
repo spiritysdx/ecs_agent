@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"html"
 	"io"
 	"net"
 	"net/http"
@@ -11,7 +12,7 @@ import (
 	"time"
 )
 
-// go run client.go -token
+// go run client.go -token 
 
 type Request struct {
 	Token string `json:"token"`
@@ -117,6 +118,7 @@ func handleTask(conn net.Conn, request Request) {
 		return
 	}
 }
+
 func fetchWebData(url string) (string, bool) {
 	client := &http.Client{
 		Timeout: 10 * time.Second, // 设置超时时间
@@ -138,5 +140,7 @@ func fetchWebData(url string) (string, bool) {
 		fmt.Println("Error reading response body:", err.Error())
 		return "", false
 	}
-	return string(body), true
+	// 对内容进行转义
+	escapedBody := html.EscapeString(string(body))
+	return escapedBody, true
 }
