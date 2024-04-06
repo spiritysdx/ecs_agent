@@ -25,6 +25,22 @@ jobs:
     - name: Build
       run: go build -o ecsagent client.go
 
+    # 删除现有发布
+    - name: Delete Existing Release
+      uses: actions/github-script@v4
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        script: |
+          const { octokit } = require('@octokit/rest');
+          const { owner, repo } = context.repo;
+          const tag_name = 'v0.0.1'; // 替换为您要删除的标签名
+          const { data } = await octokit.repos.listReleases({ owner, repo });
+          const release = data.find(r => r.tag_name === tag_name);
+          if (release) {
+            await octokit.repos.deleteRelease({ owner, repo, release_id: release.id });
+          }
+
+    # 创建新发布
     - name: Create Release
       id: create_release
       uses: actions/create-release@v1
