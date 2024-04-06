@@ -23,7 +23,7 @@ jobs:
         go-version: '1.21'
 
     - name: Build
-      run: go build -o app client.go
+      run: go build -o ecsagent client.go
 
     - name: Create Release
       id: create_release
@@ -46,6 +46,6 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./app
-        asset_name: app
+        asset_path: ./ecsagent
+        asset_name: ecsagent
         asset_content_type: application/octet-stream
