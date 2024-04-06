@@ -44,9 +44,6 @@ jobs:
       with:
         name: ecsagent
 
-    - name: Copy artifact to repository
-      run: cp -r ${{ github.workspace }}/ecsagent ${{ github.workspace }}
-
     - name: Commit and push changes
       run: |
         git config --global user.name "daily-update"
