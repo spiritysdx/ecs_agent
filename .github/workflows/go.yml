@@ -58,7 +58,7 @@ jobs:
       id: upload_url
       if: steps.check_release.outputs.release_id == 'null'
       run: |
-        echo "::set-output name=upload_url::$(jq -r '.upload_url' <<< ${{ steps.create_release.outputs.data }} | sed 's/{?name,label}//')"
+        echo "::set-output name=upload_url::$(echo '${{ steps.create_release.outputs.data }}' | jq -r '.upload_url' | sed 's/{?name,label}//')"
       shell: bash
 
     - name: Upload Release Asset
