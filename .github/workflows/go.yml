@@ -23,30 +23,34 @@ jobs:
         go-version: '1.21'
 
     - name: Build
-      run: go build -o ecsagent client.go
+      run: rm -rf ecsagent && go build -o ecsagent client.go
 
-    - name: Check for existing release
-      id: check_release
-      run: |
-        set -e
-        release_url="https://api.github.com/repos/spiritysdx/ecs_agent/releases/tags/ecs_agent"
-        response=$(curl -s -o /dev/null -w "%{http_code}" "$release_url")
-        if [ "$response" = "200" ]; then
-          echo "::set-output name=release_exists::true"
-        else
-          echo "::set-output name=release_exists::false"
-        fi
-
-    - name: Delete existing release
-      if: steps.check_release.outputs.release_exists == 'true'
-      run: |
-        set -e
-        release_id=$(curl -s https://api.github.com/repos/spiritysdx/ecs_agent/releases/tags/ecs_agent | jq -r '.id')
-        curl -X DELETE -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "https://api.github.com/repos/spiritysdx/ecs_agent/releases/$release_id"
-
-    - name: Upload file
+    - name: Archive artifact
       uses: actions/upload-artifact@v2
       with:
         name: ecsagent
-        path: ./ecsagent
+        path: ecsagent   # Path to the directory or file you want to archive
 
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Download artifact
+      uses: actions/download-artifact@v2
+      with:
+        name: ecsagent
+
+    - name: Copy artifact to repository
+      run: cp -r ${{ github.workspace }}/ecsagent .
+
+    - name: Commit and push changes
+      run: |
+        git config --global user.name "daily-update"
+        git config --global user.email "tg@spiritlhl.top"
+        git add .
+        git commit -m "Add compiled artifact"
+        git push
