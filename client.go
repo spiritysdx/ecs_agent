@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-// go run client.go -token spiritlhl136
+// go run client.go -token 
 
 type Request struct {
 	Token string `json:"token"`
