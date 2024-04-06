@@ -34,8 +34,7 @@ jobs:
         tag_name: v0.0.1
         release_name: Release 0.0.1
         body: |
-          Changes in this release:
-          - Describe your changes here
+          多机爬虫客户端
         draft: false
         prerelease: false
 
