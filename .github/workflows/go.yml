@@ -54,13 +54,21 @@ jobs:
         draft: false
         prerelease: false
 
+    - name: Get upload URL
+      id: upload_url
+      if: steps.check_release.outputs.release_id == 'null'
+      run: |
+        echo "::set-output name=upload_url::$(jq -r '.upload_url' <<< ${{ steps.create_release.outputs.data }} | sed 's/{?name,label}//')"
+      shell: bash
+
     - name: Upload Release Asset
       id: upload-release-asset
+      if: steps.check_release.outputs.release_id == 'null'
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        upload_url: ${{ steps.upload_url.outputs.upload_url }}
         asset_path: ./ecsagent
         asset_name: ecsagent
         asset_content_type: application/octet-stream
