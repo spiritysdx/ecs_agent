@@ -45,7 +45,7 @@ jobs:
         name: ecsagent
 
     - name: Copy artifact to repository
-      run: cp -r ${{ github.workspace }}/ecsagent .
+      run: cp -r ${{ github.workspace }}/ecsagent ${{ github.workspace }}
 
     - name: Commit and push changes
       run: |
