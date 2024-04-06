@@ -25,51 +25,28 @@ jobs:
     - name: Build
       run: go build -o ecsagent client.go
 
-    - name: Check if release exists
+    - name: Check for existing release
       id: check_release
       run: |
-        TAG_NAME="v0.0.1"  # Update this with your desired tag name
-        RELEASE_ID=$(curl -s -X GET -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "https://api.github.com/repos/${{ github.repository }}/releases/tags/$TAG_NAME" | jq -r '.id')
-        echo "::set-output name=release_id::$RELEASE_ID"
-      continue-on-error: true
+        set -e
+        release_url="https://api.github.com/repos/spiritysdx/ecs_agent/releases/tags/ecs_agent"
+        response=$(curl -s -o /dev/null -w "%{http_code}" "$release_url")
+        if [ "$response" = "200" ]; then
+          echo "::set-output name=release_exists::true"
+        else
+          echo "::set-output name=release_exists::false"
+        fi
 
     - name: Delete existing release
-      if: steps.check_release.outputs.release_id != 'null'
+      if: steps.check_release.outputs.release_exists == 'true'
       run: |
-        RELEASE_ID="${{ steps.check_release.outputs.release_id }}"
-        curl -X DELETE -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "https://api.github.com/repos/${{ github.repository }}/releases/$RELEASE_ID"
-      continue-on-error: true
+        set -e
+        release_id=$(curl -s https://api.github.com/repos/spiritysdx/ecs_agent/releases/tags/ecs_agent | jq -r '.id')
+        curl -X DELETE -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "https://api.github.com/repos/spiritysdx/ecs_agent/releases/$release_id"
 
-    - name: Create Release
-      id: create_release
-      if: steps.check_release.outputs.release_id == 'null'
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Upload file
+      uses: actions/upload-artifact@v2
       with:
-        tag_name: v0.0.1
-        release_name: Release 0.0.1
-        body: |
-          多机爬虫客户端
-        draft: false
-        prerelease: false
-
-    - name: Get upload URL
-      id: upload_url
-      if: steps.check_release.outputs.release_id == 'null'
-      run: |
-        echo "::set-output name=upload_url::$(echo '${{ steps.create_release.outputs.upload_url }}' | sed 's/{?name,label}//')"
-      shell: bash
-
-    - name: Upload Release Asset
-      id: upload-release-asset
-      if: steps.check_release.outputs.release_id == 'null'
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.upload_url.outputs.upload_url }}
-        asset_path: ./ecsagent
-        asset_name: ecsagent-${{ github.run_number }} # Change the asset name to include a unique identifier
-        asset_content_type: application/octet-stream
+        name: ecsagent
+        path: ./ecsagent
 
