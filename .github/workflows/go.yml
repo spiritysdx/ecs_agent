@@ -70,5 +70,6 @@ jobs:
       with:
         upload_url: ${{ steps.upload_url.outputs.upload_url }}
         asset_path: ./ecsagent
-        asset_name: ecsagent
+        asset_name: ecsagent-${{ github.run_number }} # Change the asset name to include a unique identifier
         asset_content_type: application/octet-stream
+
