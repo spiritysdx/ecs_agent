@@ -68,7 +68,8 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        upload_url: ${{ steps.upload_url.outputs.upload_url }}
+        upload_url: ${{ steps.upload_url.outputs.upload_url }} # Correctly reference upload_url output
         asset_path: ./ecsagent
         asset_name: ecsagent
         asset_content_type: application/octet-stream
+
