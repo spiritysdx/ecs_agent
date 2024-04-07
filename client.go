@@ -110,7 +110,7 @@ func fetchWebData(url string) (string, bool) {
 	request := gorequest.New()
 	resp, body, err := request.Get(url).End()
 	if err != nil {
-		fmt.Println("Error reading response body")
+		fmt.Printf("Error reading response body: %v", url)
 		return "", false
 	}
 	fmt.Println("URL:", resp.Request.URL)
