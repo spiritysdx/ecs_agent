@@ -84,11 +84,14 @@ func handleTask(conn net.Conn, request Request) {
 	// 计算运行时长
 	runtime := int(time.Since(startTime).Seconds())
 	// 构建响应
+	loc, _ := time.LoadLocation("Asia/Shanghai")
+	beijingTime := time.Now().In(loc)
+	formattedTime := beijingTime.Format("2006-01-02 15:04:05")
 	response := Response{
 		Token:     request.Token,
 		Runtime:   runtime,
 		Success:   success,
-		StartTime: startTime.Format(time.RFC3339), // 北京时间
+		StartTime: formattedTime, // 北京时间
 		WebData:   webData,
 	}
 	// 将响应编码为JSON格式
