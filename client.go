@@ -105,9 +105,11 @@ func handleTask(conn net.Conn, request Request) {
 	// 发送响应给服务端
 	_, err = conn.Write(responseJSON)
 	if err != nil {
-		fmt.Println("Error sending response:", err.Error())
-		return
+	    fmt.Println("Error sending response:", err.Error())
+	    return
 	}
+	// 打印发送的数据大小
+	fmt.Println("Sent response size:", len(responseJSON))
 }
 
 func fetchWebData(url string) (string, bool) {
