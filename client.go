@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-// go run client.go -token 
+// go run client.go -token
 
 type Request struct {
 	Token string `json:"token"`
@@ -25,20 +25,22 @@ type Response struct {
 	WebData   string `json:"webdata,omitempty"`
 }
 
-var SpidersToken string
+var spiderToken, dashboardHost, dashboardPort string
 
 func main() {
 	// 指定校验的token明文
-	flag.StringVar(&SpidersToken, "token", "", "Token for authentication")
+	flag.StringVar(&spiderToken, "token", "", "爬虫校验的Token")
+	flag.StringVar(&dashboardHost, "host", "", "主控的IP地址")
+	flag.StringVar(&dashboardPort, "port", "", "主控的通信端口")
 	flag.Parse()
-	if SpidersToken == "" {
+	if spiderToken == "" {
 		fmt.Println("Error: Token not provided.")
 		fmt.Println("Usage: go run your_program.go -token your_token")
 		os.Exit(1)
 	}
 	for {
 		// 连接服务端
-		conn, err := net.Dial("tcp", "localhost:7788")
+		conn, err := net.Dial("tcp", dashboardHost+":"+dashboardPort)
 		if err != nil {
 			fmt.Println("Error connecting:", err.Error())
 			time.Sleep(6 * time.Second) // 等待 6 秒后尝试重新连接
@@ -73,7 +75,7 @@ func handleConnection(conn net.Conn) {
 
 func handleTask(conn net.Conn, request Request) {
 	// 校验 Token
-	if request.Token != SpidersToken {
+	if request.Token != spiderToken {
 		fmt.Println("Invalid token received. Ignoring the task.")
 		return
 	}
