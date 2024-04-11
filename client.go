@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-// go run client.go -token
+// go run client.go -token 
 
 type Request struct {
 	Token string `json:"token"`
@@ -55,7 +55,7 @@ func handleConnection(conn net.Conn) {
 	defer conn.Close()
 	for {
 		// 接收服务端发送的任务
-		buffer := make([]byte, 409600)
+		buffer := make([]byte, 10 * 1024 * 1024)
 		n, err := conn.Read(buffer)
 		if err != nil {
 			fmt.Println("Error reading:", err.Error())
