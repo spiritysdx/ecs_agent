@@ -5,7 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"net/http"
-	"io/ioutil"
+	"io"
 	"time"
 )
 
@@ -48,7 +48,7 @@ func handleTaskRequest(w http.ResponseWriter, r *http.Request) {
 
 	// 解析请求
 	var request Request
-	body, err := ioutil.ReadAll(r.Body)
+	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		fmt.Println("Error reading request body:", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -120,7 +120,7 @@ func fetchWebData(url string) (string, bool) {
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Println("Error reading response body:", err)
 		return "", false
