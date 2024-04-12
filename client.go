@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io"
-	"log"
-	"net/http"
+	"net"
+	"github.com/parnurzeal/gorequest"
+	"os"
 	"time"
 )
 
@@ -24,67 +24,66 @@ type Response struct {
 }
 
 var spiderToken, dashboardHost, dashboardPort string
+var delimiter = "spiritlhl"
 
 func main() {
+	// 指定校验的token明文
 	flag.StringVar(&spiderToken, "token", "", "爬虫校验的Token")
 	flag.StringVar(&dashboardHost, "host", "", "主控的IP地址")
 	flag.StringVar(&dashboardPort, "port", "", "主控的通信端口")
 	flag.Parse()
-
 	if spiderToken == "" {
-		log.Fatal("Error: Token not provided.")
+		fmt.Println("Error: Token not provided.")
+		fmt.Println("Usage: go run your_program.go -token your_token")
+		os.Exit(1)
 	}
-
-	http.HandleFunc("/task", handleTaskRequest)
-	serverAddr := fmt.Sprintf("%s:%s", dashboardHost, dashboardPort)
-	log.Printf("Server listening on %s", serverAddr)
-	log.Fatal(http.ListenAndServe(serverAddr, nil))
-}
-
-func handleTaskRequest(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-	// 解析请求
-	var request Request
-	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		http.Error(w, "Error decoding request", http.StatusBadRequest)
-		return
-	}
-	// 处理任务
-	go func() {
-		response := processTask(request)
-		// 将响应编码为JSON格式并发送
-		w.Header().Set("Content-Type", "application/json")
-		if err := json.NewEncoder(w).Encode(response); err != nil {
-			log.Printf("Error encoding response: %v", err)
-			http.Error(w, "Error encoding response", http.StatusInternalServerError)
-			return
+	for {
+		// 连接服务端
+		conn, err := net.Dial("tcp", dashboardHost+":"+dashboardPort)
+		if err != nil {
+			fmt.Println("Error connecting:", err.Error())
+			time.Sleep(6 * time.Second) // 等待 6 秒后尝试重新连接
+			continue
 		}
-	}()
+		// 连接成功后开始处理任务
+		handleConnection(conn)
+	}
 }
 
-func processTask(request Request) Response {
+func handleConnection(conn net.Conn) {
+	defer conn.Close()
+	for {
+		// 接收服务端发送的任务
+		buffer := make([]byte, 10 * 1024 * 1024)
+		n, err := conn.Read(buffer)
+		if err != nil {
+			fmt.Println("Error reading:", err.Error())
+			return // 如果出错就退出，等待外层循环重新连接
+		}
+		// 解析任务
+		var request Request
+		err = json.Unmarshal(buffer[:n], &request)
+		if err != nil {
+			fmt.Println("Error decoding request:", err.Error())
+			continue // 继续等待下一个任务
+		}
+		// 处理任务
+		go handleTask(conn, request)
+	}
+}
+
+func handleTask(conn net.Conn, request Request) {
 	// 校验 Token
 	if request.Token != spiderToken {
-		log.Println("Invalid token received. Ignoring the task.")
-		return Response{
-			Token:     request.Token,
-			Success:   false,
-			StartTime: time.Now().Format("2006-01-02 15:04:05"),
-		}
+		fmt.Println("Invalid token received. Ignoring the task.")
+		return
 	}
-
 	// 记录开始时间
 	startTime := time.Now()
-
 	// 获取页面内容
 	webData, success := fetchWebData(request.URL)
-
 	// 计算运行时长
 	runtime := int(time.Since(startTime).Seconds())
-
 	// 构建响应
 	loc, _ := time.LoadLocation("Asia/Shanghai")
 	beijingTime := time.Now().In(loc)
@@ -96,28 +95,32 @@ func processTask(request Request) Response {
 		StartTime: formattedTime, // 北京时间
 		WebData:   webData,
 	}
-
-	return response
+	// 将响应编码为JSON格式
+	responseJSON, err := json.Marshal(response)
+	if err != nil {
+		fmt.Println("Error encoding response:", err.Error())
+		return
+	}
+	// 构造带有分隔符的消息
+	message := string(responseJSON) + delimiter
+	_, err = conn.Write([]byte(message))
+	if err != nil {
+		fmt.Println("Error sending response:", err.Error())
+		return
+	}
+	fmt.Println("Sent response size:", len(message))
 }
 
 func fetchWebData(url string) (string, bool) {
 	startTime := time.Now() // 记录开始时间
-	resp, err := http.Get(url)
+	request := gorequest.New()
+	resp, body, err := request.Get(url).End()
 	if err != nil {
-		log.Printf("Error fetching web data: %v", err)
+		fmt.Printf("Error reading response body: %v \n", url)
 		return "", false
 	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		log.Printf("Error reading response body: %v", err)
-		return "", false
-	}
-
-	log.Printf("URL: %s", resp.Request.URL)
+	fmt.Println("URL:", resp.Request.URL)
 	elapsedTime := time.Since(startTime) // 计算经过的时间
-	log.Printf("Time taken: %s", elapsedTime)
-
-	return string(body), true
+	fmt.Println("Time taken:", elapsedTime)
+	return body, true
 }
