@@ -4,8 +4,9 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"net/http"
 	"io"
+	"log"
+	"net/http"
 	"time"
 )
 
@@ -31,55 +32,43 @@ func main() {
 	flag.Parse()
 
 	if spiderToken == "" {
-		fmt.Println("Error: Token not provided.")
-		fmt.Println("Usage: go run your_program.go -token your_token")
-		return
+		log.Fatal("Error: Token not provided.")
 	}
 
 	http.HandleFunc("/task", handleTaskRequest)
-	http.ListenAndServe(dashboardHost+":"+dashboardPort, nil)
+	serverAddr := fmt.Sprintf("%s:%s", dashboardHost, dashboardPort)
+	log.Printf("Server listening on %s", serverAddr)
+	log.Fatal(http.ListenAndServe(serverAddr, nil))
 }
 
 func handleTaskRequest(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		w.WriteHeader(http.StatusMethodNotAllowed)
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-
 	// 解析请求
 	var request Request
-	body, err := io.ReadAll(r.Body)
-	if err != nil {
-		fmt.Println("Error reading request body:", err)
-		w.WriteHeader(http.StatusInternalServerError)
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		http.Error(w, "Error decoding request", http.StatusBadRequest)
 		return
 	}
-	err = json.Unmarshal(body, &request)
-	if err != nil {
-		fmt.Println("Error decoding request:", err)
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
 	// 处理任务
 	go func() {
 		response := processTask(request)
 		// 将响应编码为JSON格式并发送
-		responseJSON, err := json.Marshal(response)
-		if err != nil {
-			fmt.Println("Error encoding response:", err)
-			w.WriteHeader(http.StatusInternalServerError)
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			log.Printf("Error encoding response: %v", err)
+			http.Error(w, "Error encoding response", http.StatusInternalServerError)
 			return
 		}
-		w.Header().Set("Content-Type", "application/json")
-		w.Write(responseJSON)
 	}()
 }
 
 func processTask(request Request) Response {
 	// 校验 Token
 	if request.Token != spiderToken {
-		fmt.Println("Invalid token received. Ignoring the task.")
+		log.Println("Invalid token received. Ignoring the task.")
 		return Response{
 			Token:     request.Token,
 			Success:   false,
@@ -115,20 +104,20 @@ func fetchWebData(url string) (string, bool) {
 	startTime := time.Now() // 记录开始时间
 	resp, err := http.Get(url)
 	if err != nil {
-		fmt.Println("Error fetching web data:", err)
+		log.Printf("Error fetching web data: %v", err)
 		return "", false
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Println("Error reading response body:", err)
+		log.Printf("Error reading response body: %v", err)
 		return "", false
 	}
 
-	fmt.Println("URL:", resp.Request.URL)
+	log.Printf("URL: %s", resp.Request.URL)
 	elapsedTime := time.Since(startTime) // 计算经过的时间
-	fmt.Println("Time taken:", elapsedTime)
+	log.Printf("Time taken: %s", elapsedTime)
 
 	return string(body), true
 }
