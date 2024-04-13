@@ -89,12 +89,12 @@ func main() {
 func fetchWebData(url string) (string, bool) {
 	startTime := time.Now()
 	request := gorequest.New()
-	resp, body, err := request.Get(url).End()
+	_, body, err := request.Get(url).End()
 	if err != nil {
 		fmt.Printf("Error reading response body: %v \n", url)
 		return "", false
 	}
-	fmt.Println("URL:", resp.CrawlerTask.URL)
+	fmt.Println("URL:", url)
 	elapsedTime := time.Since(startTime)
 	fmt.Println("Time taken:", elapsedTime)
 	return body, true
