@@ -93,7 +93,7 @@ func main() {
 func fetchWebData(url string) (string, bool) {
 	startTime := time.Now()
 	request := gorequest.New()
-	req := request.Get(url)
+	req := request.Get(url).Retry(3, 6*time.Second, http.StatusBadRequest, http.StatusInternalServerError)
 	req.Set("User-Agent",
 		"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.75 Safari/537.36")
 	req.Set("Accept",
