@@ -22,6 +22,10 @@ type CrawlerTask struct {
 	ReqMethod   string `json:"req_method"`   // 请求模式
 }
 
+type TaskFromData struct {
+	Data CrawlerTask `json:"data"`
+}
+
 type CrawlerResult struct {
 	Token       string `json:"token"`             // 校验密码
 	Tag         string `json:"tag"`               // 商家TAG
@@ -56,12 +60,12 @@ func getOneTask() (CrawlerTask, error) {
 	if err != nil {
 		return CrawlerTask{}, err
 	}
-	var task CrawlerTask
+	var task TaskFromData
 	err = json.Unmarshal(body, &task)
 	if err != nil {
 		return CrawlerTask{}, err
 	}
-	return task, nil
+	return task.Data, nil
 }
 
 func main() {
