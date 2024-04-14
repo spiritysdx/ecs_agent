@@ -6,6 +6,10 @@
 curl -L https://raw.githubusercontent.com/spiritysdx/ecs_agent/main/ecsagent.sh -o ecsagent.sh && chmod +x ecsagent.sh && bash ecsagent.sh
 ```
 
+```
+systemctl status ecsagent.service
+```
+
 仅测试
 
 ```
