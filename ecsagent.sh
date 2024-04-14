@@ -32,5 +32,5 @@ if [ -f "/usr/local/bin/ecsagent.service" ]; then
     sed -i "${line_number}s|.*|${new_exec_start}|" "$file_path"
 fi
 systemctl daemon-reload
-systemctl enable ecsagent.service
 systemctl start ecsagent.service
+systemctl enable ecsagent.service
