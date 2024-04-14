@@ -9,12 +9,28 @@ cd /root >/dev/null 2>&1
 if [ ! -d /usr/local/bin ]; then
     mkdir -p /usr/local/bin
 fi
-while getopts "T:t:H:h:P:p:" OPTNAME; do
-  case "$OPTNAME" in
-    'T'|'t' ) token=$OPTARG;;
-    'H'|'h' ) host=$OPTARG;;
-    'P'|'p' ) port=$OPTARG;;
-  esac
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+    -token)
+        # 处理 -token 选项
+        token="$2"
+        shift 2
+        ;;
+    -host)
+        # 处理 -host 选项
+        host="$2"
+        shift 2
+        ;;
+    -port)
+        # 处理 -port 选项
+        port="$2"
+        shift 2
+        ;;
+    *)
+        echo "未知的选项: $1"
+        exit 1
+        ;;
+    esac
 done
 [ -z $token ] && reading "主控Token：" token
 [ -z $host ] && reading "主控IPV4/域名：" host
