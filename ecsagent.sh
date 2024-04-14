@@ -20,8 +20,9 @@ done
 [ -z $host ] && reading "主控IPV4/域名：" host
 [ -z $port ] && reading "主控API端口：" port
 rm -rf /usr/local/bin/ecsagent
-curl "https://raw.githubusercontent.com/spiritysdx/ecs_agent/main/ecsagent" -o /usr/local/bin/ecsagent
-curl "https://raw.githubusercontent.com/spiritysdx/ecs_agent/main/ecsagent.service"-o /etc/systemd/system/ecsagent.service
+rm -rf /etc/systemd/system/ecsagent.service
+curl -s https://raw.githubusercontent.com/spiritysdx/ecs_agent/main/ecsagent -o /usr/local/bin/ecsagent
+curl -s https://raw.githubusercontent.com/spiritysdx/ecs_agent/main/ecsagent.service -o /etc/systemd/system/ecsagent.service
 chmod +x /usr/local/bin/ecsagent
 chmod +x /etc/systemd/system/ecsagent.service
 if [ -f "/usr/local/bin/ecsagent.service" ]; then
