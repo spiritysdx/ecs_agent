@@ -1,0 +1,9 @@
+[Unit]
+Description=ecsagent
+After=network.target
+
+[Service]
+ExecStart=/usr/local/bin/ecsagent
+
+[Install]
+WantedBy=multi-user.target
