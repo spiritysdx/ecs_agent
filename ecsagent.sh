@@ -9,12 +9,19 @@ cd /root >/dev/null 2>&1
 if [ ! -d /usr/local/bin ]; then
     mkdir -p /usr/local/bin
 fi
-reading "主控Token：" token
-reading "主控IPV4/域名：" host
-reading "主控API端口：" port
+while getopts "T:t:H:h:P:p:" OPTNAME; do
+  case "$OPTNAME" in
+    'T'|'t' ) token=$OPTARG;;
+    'H'|'h' ) host=$OPTARG;;
+    'P'|'p' ) port=$OPTARG;;
+  esac
+done
+[ -z $token ] && reading "主控Token：" token
+[ -z $host ] && reading "主控IPV4/域名：" host
+[ -z $port ] && reading "主控API端口：" port
 rm -rf /usr/local/bin/ecsagent
-curl -o /usr/local/bin "https://raw.githubusercontent.com/spiritysdx/ecs_agent/main/ecsagent"
-curl -o /etc/systemd/system/ "https://raw.githubusercontent.com/spiritysdx/ecs_agent/main/ecsagent.service"
+curl "https://raw.githubusercontent.com/spiritysdx/ecs_agent/main/ecsagent" -o /usr/local/bin/ecsagent
+curl "https://raw.githubusercontent.com/spiritysdx/ecs_agent/main/ecsagent.service"-o /etc/systemd/system/ecsagent.service
 chmod +x /usr/local/bin/ecsagent
 chmod +x /etc/systemd/system/ecsagent.service
 if [ -f "/usr/local/bin/ecsagent.service" ]; then
