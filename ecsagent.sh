@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# 2024.04.14
 
 _red() { echo -e "\033[31m\033[01m$@\033[0m"; }
 _green() { echo -e "\033[32m\033[01m$@\033[0m"; }
@@ -41,7 +42,7 @@ curl -s https://raw.githubusercontent.com/spiritysdx/ecs_agent/main/ecsagent -o 
 curl -s https://raw.githubusercontent.com/spiritysdx/ecs_agent/main/ecsagent.service -o /etc/systemd/system/ecsagent.service
 chmod +x /usr/local/bin/ecsagent
 chmod +x /etc/systemd/system/ecsagent.service
-if [ -f "/usr/local/bin/ecsagent.service" ]; then
+if [ -f "/etc/systemd/system/ecsagent.service" ]; then
     new_exec_start="ExecStart=/usr/local/bin/ecsagent -token ${token} -host ${host} -port ${port}"
     file_path="/etc/systemd/system/ecsagent.service"
     line_number=6
