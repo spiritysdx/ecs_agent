@@ -41,8 +41,8 @@ type CrawlerResult struct {
 
 var spiderToken, dashboardHost, dashboardPort string
 
-func getOneTask() (CrawlerTask, error) {
-	url := "http://" + dashboardHost + ":" + dashboardPort + "/spiders/getonetask"
+func getOneTask(endpoint string) (CrawlerTask, error) {
+	url := "http://" + dashboardHost + ":" + dashboardPort + endpoint
 	data := map[string]string{"token": spiderToken}
 	jsonData, err := json.Marshal(data)
 	if err != nil {
@@ -68,26 +68,12 @@ func getOneTask() (CrawlerTask, error) {
 	return task.Data, nil
 }
 
-func main() {
-	flag.StringVar(&spiderToken, "token", "", "爬虫校验的Token")
-	flag.StringVar(&dashboardHost, "host", "", "主控的IP地址")
-	flag.StringVar(&dashboardPort, "port", "", "主控的通信端口")
-	flag.Parse()
-	if spiderToken == "" {
-		fmt.Println("Error: Token not provided.")
-		fmt.Println("Usage: go run your_program.go -token your_token")
-		os.Exit(1)
-	}
-	for {
-		task, err := getOneTask()
-		if err != nil {
-			fmt.Println("Error getting task:", err.Error())
-			time.Sleep(6 * time.Second)
-			continue
-		}
-		go handleTask(task)
-		time.Sleep(1 * time.Second)
-	}
+func getSpidersOneTask() (CrawlerTask, error) {
+	return getOneTask("/spiders/getonetask")
+}
+
+func getFASpidersOneTask() (CrawlerTask, error) {
+	return getOneTask("/AllPdSpiders/getonetask")
 }
 
 func fetchWebData(url string) (string, bool) {
@@ -109,7 +95,7 @@ func fetchWebData(url string) (string, bool) {
 	return body, true
 }
 
-func handleTask(task CrawlerTask) {
+func handleTask(task CrawlerTask, endpoint string) {
 	if task.Token != spiderToken {
 		fmt.Println("Invalid token received. Ignoring the task.")
 		return
@@ -142,7 +128,7 @@ func handleTask(task CrawlerTask) {
 		return
 	}
 	// 发送信息
-	url := "http://" + dashboardHost + ":" + dashboardPort + "/spiders/handletask"
+	url := "http://" + dashboardHost + ":" + dashboardPort + endpoint
 	resp, err := http.Post(url, "application/json", bytes.NewBuffer(responseJSON))
 	if err != nil {
 		fmt.Println("Error sending post:", err.Error())
@@ -159,4 +145,41 @@ func handleTask(task CrawlerTask) {
 		return
 	}
 	fmt.Println("Sent response result:", string(body))
+}
+
+func handleSpidersOneTask(task CrawlerTask) {
+	handleTask(task, "/spiders/handletask")
+}
+
+func handleFASpidersOneTask(task CrawlerTask) {
+	handleTask(task, "/AllPdSpiders/handletask")
+}
+
+func main() {
+	flag.StringVar(&spiderToken, "token", "", "爬虫校验的Token")
+	flag.StringVar(&dashboardHost, "host", "", "主控的IP地址")
+	flag.StringVar(&dashboardPort, "port", "", "主控的通信端口")
+	flag.Parse()
+	if spiderToken == "" {
+		fmt.Println("Error: Token not provided.")
+		fmt.Println("Usage: go run your_program.go -token your_token")
+		os.Exit(1)
+	}
+	for {
+		task1, err1 := getFASpidersOneTask()
+		if err1 != nil {
+			fmt.Println("Error getting task:", err1.Error())
+		} else {
+			go handleFASpidersOneTask(task1)
+		}
+		task2, err2 := getSpidersOneTask()
+		if err2 != nil {
+			fmt.Println("Error getting task:", err2.Error())
+			time.Sleep(6 * time.Second)
+			continue
+		} else {
+			go handleSpidersOneTask(task2)
+		}
+		time.Sleep(1 * time.Second)
+	}
 }
