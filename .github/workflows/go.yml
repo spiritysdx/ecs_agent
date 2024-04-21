@@ -23,7 +23,8 @@ jobs:
         go-version: '1.21'
 
     - name: Build
-      run: rm -rf ecsagent && go build -o ecsagent client.go
+      run: rm -rf ecsagent && GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-w -s" -a -o ecsagent client.go
+
 
     - name: Archive artifact
       uses: actions/upload-artifact@v2
