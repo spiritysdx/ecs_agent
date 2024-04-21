@@ -10,6 +10,12 @@ curl -L https://raw.githubusercontent.com/spiritysdx/ecs_agent/main/ecsagent.sh 
 systemctl status ecsagent.service
 ```
 
+```
+systemctl stop ecsagent.service
+systemctl disable ecsagent.service
+systemctl remove ecsagent.service
+```
+
 仅测试
 
 ```
